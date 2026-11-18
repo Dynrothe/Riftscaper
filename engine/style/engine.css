@@ -1,0 +1,46 @@
+/* The engine's page styles, imported once by the page: the OSRS fonts, the
+   client's interface frame, and the helpers the viewer's pages use */
+@font-face {
+    font-family: "OSRS Bold";
+    src: url(./RuneScape-Bold-12.ttf);
+}
+@font-face {
+    font-family: "OSRS Small";
+    src: url(./RuneScape-Plain-11.ttf);
+}
+
+.max-height {
+    height: 100%;
+}
+
+.center-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.content-text {
+    font-family: ui-monospace, SFMono-Regular, Menlo, "Roboto Mono", monospace;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 0 black;
+}
+
+.flex {
+    display: flex;
+    flex: 1;
+}
+
+.align-right {
+    justify-content: right;
+}
+
+/* The client's interface: its stone border and its dark background */
+.rs-border {
+    border: 6px solid;
+    border-image: url(./interface-border.png) 6 / 6px / 0px repeat;
+}
+
+.rs-background {
+    background-image: url(./interface-bg.png);
+}

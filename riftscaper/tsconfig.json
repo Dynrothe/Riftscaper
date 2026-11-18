@@ -1,0 +1,5 @@
+{
+    // Riftscaper and the engine it's built on: bun run typecheck
+    "extends": "../tsconfig.json",
+    "include": [".", "../engine/types"]
+}

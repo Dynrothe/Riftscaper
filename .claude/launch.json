@@ -1,0 +1,17 @@
+{
+    "version": "0.0.1",
+    "configurations": [
+        {
+            "name": "riftscaper",
+            "runtimeExecutable": "bun",
+            "runtimeArgs": ["run", "--cwd", "riftscaper", "start"],
+            "port": 5188
+        },
+        {
+            "name": "riftscaper-preview",
+            "runtimeExecutable": "bun",
+            "runtimeArgs": ["run", "preview:riftscaper"],
+            "port": 5189
+        }
+    ]
+}

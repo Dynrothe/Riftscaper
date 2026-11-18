@@ -1,0 +1,9 @@
+/* The client's crisp pixels, smoothed only when shown smaller (ItemIcon) */
+.ui-icon {
+    image-rendering: pixelated;
+    flex-shrink: 0;
+}
+
+.ui-icon-smooth {
+    image-rendering: auto;
+}

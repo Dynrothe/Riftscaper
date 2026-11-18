@@ -1,0 +1,4237 @@
+/* Riftscaper's interface, dressed as the OSRS client is: its stone (the engine's interface border
+   and background), bevelled stone buttons with the side panel's red stone for what's chosen,
+   orange titles and yellow values, parchment for what people say, and the client's two fonts.
+   Both fonts are pixel fonts drawn 16 units to the em, so they're crisp at 16px and its
+   multiples (32px, 48px) and blurred at anything else: every size in here is one of those. */
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+    background: #000;
+    user-select: none;
+    -webkit-user-select: none;
+    font-family: "OSRS Small", sans-serif;
+}
+
+#root {
+    height: 100%;
+}
+
+canvas {
+    outline: none;
+    border: none;
+}
+
+.game-root {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    color: #ff981f;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+    line-height: 16px;
+    text-shadow: 1px 1px 0 #000;
+}
+
+/* Everything over the game, zoomed by --ui-scale (uiScale.ts): laid out for a window 720 pixels
+   tall and drawn bigger on a bigger one. Only the panels take clicks: the rest lets the mouse
+   through to the world. */
+.ui-contents {
+    --ui-scale: 1;
+    position: absolute;
+    inset: 0;
+    zoom: var(--ui-scale);
+    pointer-events: none;
+}
+
+.game-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+button {
+    font: inherit;
+}
+
+b {
+    font-family: "OSRS Bold", sans-serif;
+    font-weight: normal;
+    color: #ffff00;
+}
+
+/* The client's scrollbars: a dark track, a stone thumb */
+.ui-contents ::-webkit-scrollbar {
+    width: 16px;
+}
+
+.ui-contents ::-webkit-scrollbar-track {
+    background: #2e2820;
+    box-shadow:
+        inset 1px 0 0 #000,
+        inset -1px 0 0 #000;
+}
+
+.ui-contents ::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, #6f6150, #54493b);
+    border: 1px solid #000;
+    box-shadow: inset 1px 1px 0 rgba(255, 230, 190, 0.25);
+}
+
+.ui-contents * {
+    scrollbar-color: #6f6150 #2e2820;
+}
+
+/* ---- Text ---- */
+
+.dim {
+    color: #c7b48e;
+}
+
+.bad {
+    color: #ff4a3a;
+}
+
+.note {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+    line-height: 16px;
+}
+
+.life-text {
+    color: #ff5040;
+}
+
+.mana-text {
+    color: #60a0ff;
+}
+
+/* ---- Panels: the client's stone, in its stone frame ---- */
+
+.panel,
+.top-bar {
+    box-sizing: border-box;
+    border: 6px solid transparent;
+    border-image: url("../../../engine/style/interface-border.png") 6 / 6px / 0 repeat;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
+    pointer-events: auto;
+}
+
+/* A panel's title along its top, over an etched line, with the close button at its right */
+.panel-head {
+    position: relative;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 23px;
+    padding: 0 32px 5px;
+    border-bottom: 1px solid #231d16;
+    box-shadow: 0 1px 0 #6e6250;
+}
+
+.panel-title {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 16px;
+    line-height: 16px;
+    color: #ff981f;
+}
+
+.panel-title.big {
+    font-size: 32px;
+    line-height: 32px;
+    text-align: center;
+    text-shadow: 2px 2px 0 #000;
+}
+
+.small-title {
+    margin-bottom: 4px;
+}
+
+.section-title {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 16px;
+    line-height: 16px;
+    color: #ff981f;
+    margin-top: 2px;
+}
+
+/* The client's close button (sprites 535 and 536), lit under the mouse */
+.rs-close {
+    width: 26px;
+    height: 23px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    pointer-events: auto;
+    flex: none;
+}
+
+.panel-head .rs-close {
+    position: absolute;
+    right: 0;
+    top: -2px;
+}
+
+.rs-close img {
+    display: block;
+}
+
+.rs-close .rs-close-lit,
+.rs-close:hover .rs-close-idle,
+.rs-close:focus-visible .rs-close-idle {
+    display: none;
+}
+
+.rs-close:hover .rs-close-lit,
+.rs-close:focus-visible .rs-close-lit {
+    display: block;
+}
+
+.rs-close:focus-visible {
+    outline: 1px solid #ffff00;
+}
+
+/* Without the sprite: a dark square with an X */
+.rs-close-x {
+    position: relative;
+    display: block;
+    width: 24px;
+    height: 21px;
+    background: #2a221a;
+    border: 1px solid #000;
+}
+
+.rs-close-x::before,
+.rs-close-x::after {
+    content: "";
+    position: absolute;
+    left: 5px;
+    right: 5px;
+    top: 9px;
+    height: 3px;
+    background: #c8a070;
+    transform: rotate(45deg);
+}
+
+.rs-close-x::after {
+    transform: rotate(-45deg);
+}
+
+/* ---- Buttons: bevelled stone, red stone when chosen ---- */
+
+.ui-button {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 16px;
+    line-height: 16px;
+    color: #ff981f;
+    text-shadow: 1px 1px 0 #000;
+    white-space: nowrap;
+    padding: 6px 16px;
+    background: linear-gradient(#5f5341, #493f32);
+    border: 1px solid #0f0c08;
+    border-radius: 0;
+    box-shadow:
+        inset 1px 1px 0 rgba(255, 230, 190, 0.22),
+        inset -1px -1px 0 rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.ui-button:hover:not(:disabled),
+.ui-button:focus-visible {
+    color: #ffffff;
+    outline: none;
+    background: linear-gradient(#6e604c, #564a3b);
+}
+
+.ui-button:active:not(:disabled) {
+    background: linear-gradient(#4a4033, #5a4e3d);
+    box-shadow:
+        inset 1px 1px 0 rgba(0, 0, 0, 0.5),
+        inset -1px -1px 0 rgba(255, 230, 190, 0.15);
+}
+
+.ui-button:disabled {
+    color: #8a7a60;
+    background: linear-gradient(#4b4235, #3e362c);
+    cursor: default;
+}
+
+.ui-button.chosen {
+    color: #ffffff;
+    background: linear-gradient(#7e2e1d, #5c1e12);
+    box-shadow:
+        inset 1px 1px 0 rgba(255, 170, 130, 0.35),
+        inset -1px -1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.ui-button.chosen:hover:not(:disabled) {
+    background: linear-gradient(#8e3a26, #6a2617);
+}
+
+.ui-button.small,
+.ui-button.tiny {
+    font-family: "OSRS Small", sans-serif;
+    padding: 5px 10px;
+}
+
+.ui-button.tiny {
+    padding: 4px 7px;
+}
+
+/* The big red button of the client's welcome screen */
+.ui-button.big {
+    font-size: 32px;
+    line-height: 32px;
+    padding: 8px 36px 10px;
+    color: #ffd040;
+    text-shadow: 2px 2px 0 #000;
+    background: linear-gradient(#a52b1c, #741a10);
+    border: 2px solid #120604;
+    box-shadow:
+        inset 2px 2px 0 rgba(255, 150, 110, 0.35),
+        inset -2px -2px 0 rgba(0, 0, 0, 0.45),
+        0 3px 10px rgba(0, 0, 0, 0.6);
+}
+
+.ui-button.big:hover:not(:disabled),
+.ui-button.big:focus-visible {
+    color: #ffffff;
+    background: linear-gradient(#bb3524, #861f13);
+}
+
+.ui-button.big:disabled {
+    color: #b08060;
+    background: linear-gradient(#6a3428, #4a2218);
+}
+
+.ui-button.danger {
+    color: #ff5040;
+}
+
+.ui-button.glow {
+    color: #ffff00;
+    animation: glow 1.4s ease-in-out infinite;
+}
+
+@keyframes glow {
+    50% {
+        box-shadow: 0 0 8px 2px rgba(255, 220, 80, 0.6);
+    }
+}
+
+/* The character design's arrows */
+.ui-button.arrow {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+}
+
+.ui-button.arrow::before {
+    content: "";
+    position: absolute;
+    top: 6px;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    filter: drop-shadow(1px 1px 0 #000);
+}
+
+.ui-button.arrow.left::before {
+    left: 8px;
+    border-right: 6px solid #ff981f;
+}
+
+.ui-button.arrow.right::before {
+    left: 9px;
+    border-left: 6px solid #ff981f;
+}
+
+.ui-button.arrow:hover::before {
+    border-left-color: transparent;
+    border-right-color: transparent;
+}
+
+.ui-button.arrow.left:hover::before {
+    border-right-color: #ffffff;
+}
+
+.ui-button.arrow.right:hover::before {
+    border-left-color: #ffffff;
+}
+
+/* A tab along a panel's top: stone, the red stone when it's showing */
+.stone-tab {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+    line-height: 16px;
+    color: #ff981f;
+    text-shadow: 1px 1px 0 #000;
+    white-space: nowrap;
+    padding: 5px 10px;
+    background: linear-gradient(#564a3a, #40372b);
+    border: 1px solid #0f0c08;
+    box-shadow:
+        inset 1px 1px 0 rgba(255, 230, 190, 0.18),
+        inset -1px -1px 0 rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.stone-tab:hover,
+.stone-tab:focus-visible {
+    color: #ffffff;
+    outline: none;
+}
+
+.stone-tab.on {
+    color: #ffffff;
+    background: linear-gradient(#7e2e1d, #5c1e12);
+    box-shadow:
+        inset 1px 1px 0 rgba(255, 170, 130, 0.35),
+        inset -1px -1px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* A row in a list (rifts, heroes): a well in the stone, lit under the mouse */
+.list-button,
+.hero-row,
+.hc-toggle,
+.picker-choice {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+    line-height: 16px;
+    color: #ff981f;
+    text-shadow: 1px 1px 0 #000;
+    text-align: left;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid #231d16;
+    box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.list-button:hover,
+.list-button:focus-visible,
+.hero-row:hover,
+.hero-row:focus-visible,
+.hc-toggle:hover,
+.hc-toggle:focus-visible,
+.picker-choice:hover,
+.picker-choice:focus-visible {
+    outline: none;
+    background: rgba(255, 230, 180, 0.08);
+    border-color: #8a7350;
+}
+
+.list-button.chosen,
+.hero-row.chosen {
+    background: linear-gradient(rgba(126, 46, 29, 0.75), rgba(92, 30, 18, 0.75));
+    border-color: #c0603c;
+}
+
+/* ---- Messages ---- */
+
+/* On the title: over the middle */
+.toasts {
+    position: absolute;
+    top: 96px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    pointer-events: none;
+}
+
+.toasts .toast {
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid #5a4a33;
+    padding: 4px 12px;
+    color: #ffff00;
+    white-space: nowrap;
+}
+
+/* In the game: running up the left, newest at the foot, like the client's chat */
+.chat {
+    position: absolute;
+    left: 10px;
+    bottom: 136px;
+    width: 440px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 1px;
+    pointer-events: none;
+}
+
+.chat .toast {
+    padding: 2px 8px 3px;
+    color: #ffffff;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.35) 70%, rgba(0, 0, 0, 0));
+    animation: chat-in 0.15s ease-out;
+}
+
+@keyframes chat-in {
+    from {
+        opacity: 0;
+        transform: translateX(-8px);
+    }
+}
+
+.toast.warn {
+    color: #ff4a3a;
+}
+
+.toast.good {
+    color: #40ff40;
+}
+
+/* ---- Loading, and a rift being made ---- */
+
+.game-status {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    text-align: center;
+    padding: 0 24px;
+    pointer-events: auto;
+}
+
+.status-box {
+    max-width: 480px;
+    padding: 12px 18px;
+}
+
+.status-box p {
+    color: #ffffff;
+    margin: 10px 0 0;
+}
+
+.loading {
+    width: min(400px, calc(80vw / var(--ui-scale)));
+}
+
+.loading-title {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 48px;
+    line-height: 48px;
+    margin-bottom: 20px;
+    text-shadow: none;
+    color: #ff981f;
+    filter: drop-shadow(3px 3px 0 #000);
+}
+
+/* The client's own loading bar: red, in a red frame, with what it's doing inside */
+.loading-bar {
+    position: relative;
+    height: 30px;
+    border: 1px solid #8c1111;
+    background: #000;
+}
+
+.loading-fill {
+    height: 100%;
+    background: #8c1111;
+    transition: width 0.3s;
+}
+
+.loading-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "OSRS Bold", sans-serif;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+/* The client's "Loading - please wait.": white on black, in a white line */
+.entering {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+.entering-box {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ffffff;
+    background: #000;
+    border: 1px solid #ffffff;
+    padding: 6px 12px 7px;
+}
+
+/* ---- The world's own boxes: like the overlays players know from RuneLite ---- */
+
+.info-box {
+    background: rgba(70, 61, 50, 0.66);
+    border: 1px solid rgba(14, 11, 8, 0.9);
+    box-shadow: inset 0 0 0 1px rgba(125, 108, 84, 0.45);
+    padding: 3px 7px 4px;
+}
+
+/* The rift's box, and the tasks under it: as narrow as they'll go, a line for each thing */
+.top-left {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    max-width: 244px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.zone-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.zone-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.zone-time {
+    pointer-events: auto;
+    cursor: help;
+}
+
+.zone-name {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ff981f;
+}
+
+.zone-sub {
+    color: #ffffff;
+}
+
+.zone-label {
+    color: #c7b48e;
+}
+
+.zone-value {
+    color: #ffff00;
+}
+
+.zone-portal {
+    color: #d0a0ff;
+}
+
+.zone-encounter {
+    margin-top: 4px;
+    padding-top: 3px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.zone-encounter-name {
+    font-family: "OSRS Bold", sans-serif;
+}
+
+.zone-mods {
+    color: #ff8a60;
+    pointer-events: auto;
+    cursor: help;
+}
+
+/* Life bars, green on red as the client's are */
+.hp-bar {
+    position: relative;
+    height: 10px;
+    margin: 3px 0 1px;
+    background: #660f10;
+    border: 1px solid #000;
+}
+
+.hp-bar.big {
+    height: 18px;
+}
+
+.hp-fill {
+    height: 100%;
+    background: #009236;
+}
+
+.hp-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+}
+
+/* Across the top, between the zone's box and the minimap: 440 wide in the middle where there's
+   room, narrower (and off centre) in a small window */
+.boss-bar {
+    position: absolute;
+    top: 8px;
+    left: max(calc(50% - 220px), 336px);
+    right: max(calc(50% - 220px), 192px);
+    text-align: center;
+}
+
+.boss-name {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ff981f;
+}
+
+.boss-title {
+    color: #ffffff;
+}
+
+.hover-info {
+    position: absolute;
+    top: 58px;
+    left: max(calc(50% - 220px), 336px);
+    right: max(calc(50% - 220px), 192px);
+    width: fit-content;
+    margin: 0 auto;
+    min-width: 200px;
+    max-width: 360px;
+    text-align: center;
+}
+
+.hover-name {
+    font-family: "OSRS Bold", sans-serif;
+}
+
+.hover-sub {
+    color: #ffffff;
+}
+
+/* Under the hero, who's always in the middle of the screen, clear of the chat and the buffs */
+.channel {
+    position: absolute;
+    top: calc(50% + 52px);
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+.channel-text {
+    font-family: "OSRS Bold", sans-serif;
+    color: #a0c8ff;
+}
+
+.channel-bar {
+    width: 220px;
+    height: 10px;
+    margin-top: 4px;
+    background: #101830;
+    border: 1px solid #000;
+}
+
+.channel-fill {
+    height: 100%;
+    background: linear-gradient(#a0d0ff, #3060c0);
+}
+
+/* The minimap's stone frame (it's drawn on the overlay canvas, at the top right) */
+.minimap-frame {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 172px;
+    height: 172px;
+    border: 6px solid transparent;
+    border-image: url("../../../engine/style/interface-border.png") 6 / 6px / 0 repeat;
+    pointer-events: none;
+}
+
+/* ---- The bar along the bottom ---- */
+
+.action-bar {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+    /* Over the pack, for the skill picker that opens above it */
+    z-index: 4;
+}
+
+/* The minimap's orb, twice its size (rs.tsx): the frame, the orb on it, and the number on its
+   plate. The mana orb's frame is turned round so its plate faces out. */
+.rs-orb {
+    position: relative;
+    width: 114px;
+    height: 68px;
+    flex: none;
+    pointer-events: auto;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.rs-orb-frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.rs-orb.mana .rs-orb-frame {
+    transform: scaleX(-1);
+}
+
+.rs-orb-ball {
+    position: absolute;
+    left: 54px;
+    top: 8px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #2a2420, #080604);
+}
+
+.rs-orb.mana .rs-orb-ball {
+    left: 8px;
+}
+
+.rs-orb-ball > img,
+.rs-orb-fill > img {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    display: block;
+}
+
+.rs-orb-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    transition: height 0.1s;
+}
+
+.rs-orb.mana .rs-orb-fill > img {
+    filter: hue-rotate(-18deg) saturate(1.6) brightness(1.05);
+}
+
+.rs-orb-ball > .rs-orb-icon {
+    top: 0;
+    bottom: auto;
+}
+
+.rs-orb-value {
+    position: absolute;
+    left: 6px;
+    top: 34px;
+    width: 46px;
+    text-align: center;
+    font-family: "OSRS Bold", sans-serif;
+}
+
+.rs-orb.mana .rs-orb-value {
+    left: 62px;
+}
+
+/* Experience over the flasks and skills, and the tabs in two rows beside them */
+.bar-middle {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 10px;
+    row-gap: 6px;
+    padding: 5px 6px 6px;
+}
+
+.xp-row {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 24px;
+}
+
+.xp-level {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ffff00;
+    white-space: nowrap;
+}
+
+.xp-bar {
+    position: relative;
+    flex: 1;
+    height: 14px;
+    background: #14100a;
+    border: 1px solid #000;
+    box-shadow: 0 1px 0 rgba(255, 230, 190, 0.15);
+}
+
+.xp-fill {
+    height: 100%;
+    background: linear-gradient(#e8c850, #8a6810);
+}
+
+.xp-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+}
+
+.hud-gold {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-width: 70px;
+    white-space: nowrap;
+}
+
+.bar-row {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* The belt's four potions (content/potions.ts), each its cache icon for the doses left */
+.belt {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+}
+
+.belt-potion {
+    position: relative;
+    width: 34px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(#3a3024, #14100a);
+    border: 1px solid #000;
+    box-shadow:
+        0 0 0 1px #7a6040,
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+    pointer-events: auto;
+}
+
+.belt-potion.magic {
+    box-shadow:
+        0 0 0 1px #6a6ad8,
+        inset 0 0 6px rgba(110, 110, 255, 0.5);
+}
+
+.belt-potion.unique {
+    box-shadow:
+        0 0 0 1px #d08030,
+        inset 0 0 6px rgba(230, 140, 50, 0.5);
+}
+
+.belt-potion.empty > img,
+.belt-potion.empty > canvas,
+.belt-potion.dry > img,
+.belt-potion.dry > canvas {
+    opacity: 0.35;
+}
+
+.belt-count {
+    position: absolute;
+    right: 1px;
+    bottom: 3px;
+    color: #ffff00;
+}
+
+.belt-key {
+    position: absolute;
+    left: 1px;
+    top: -1px;
+    color: #ffffff;
+}
+
+/* The next dose filling, along the foot */
+.belt-fill {
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    bottom: 1px;
+    height: 2px;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.belt-fill > div {
+    height: 100%;
+    background: #ffd040;
+}
+
+.belt-elixir {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    filter: drop-shadow(0 0 3px rgba(120, 255, 120, 0.7));
+}
+
+.skills {
+    display: flex;
+    gap: 4px;
+}
+
+/* The mouse's two buttons, apart from the keys by a gap and a notch of stone */
+.skills.mouse {
+    position: relative;
+    margin-right: 8px;
+    padding-right: 10px;
+}
+
+.skills.mouse::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 2px;
+    background: #2a2218;
+    box-shadow: 1px 0 0 rgba(255, 230, 190, 0.15);
+}
+
+.skill-mouse {
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 10px;
+    height: 14px;
+    display: flex;
+    border: 1px solid #000;
+    border-radius: 5px 5px 6px 6px;
+    background: linear-gradient(transparent 45%, #d8d0c0 45%);
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.mouse-button {
+    flex: 1;
+    height: 45%;
+    background: #706858;
+}
+
+.mouse-button + .mouse-button {
+    border-left: 1px solid #000;
+}
+
+.skill-mouse.left .mouse-button:first-child,
+.skill-mouse.right .mouse-button:last-child {
+    background: #ffff00;
+}
+
+.skills.resting {
+    opacity: 0.45;
+    filter: grayscale(0.7);
+}
+
+.skill {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(#3a3024, #14100a);
+    border: 1px solid #000;
+    box-shadow:
+        0 0 0 1px #7a6040,
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.skill:hover {
+    box-shadow:
+        0 0 0 1px #e8c070,
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+.skill.picking {
+    box-shadow:
+        0 0 0 2px #ffff00,
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+.skill.locked .ui-icon {
+    filter: grayscale(1) brightness(0.4);
+}
+
+.skill.dry .ui-icon {
+    filter: hue-rotate(200deg) brightness(0.6);
+}
+
+.skill-cool {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+}
+
+.skill-lock {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 32px;
+    line-height: 32px;
+    color: #6a5a40;
+}
+
+.skill.locked .skill-lock {
+    color: #ff4a3a;
+    justify-content: flex-end;
+    align-items: flex-start;
+    padding: 2px 4px;
+    font-size: 16px;
+    line-height: 16px;
+}
+
+.skill-key {
+    position: absolute;
+    left: 2px;
+    top: 0;
+    color: #ffffff;
+}
+
+.skill-mana {
+    position: absolute;
+    right: 2px;
+    bottom: -1px;
+    color: #80b0ff;
+}
+
+.skill-mana.life {
+    color: #ff7060;
+}
+
+/* The side panel's tabs, as the client has them: an icon on stone, red stone while it's open */
+.hud-tabs {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    display: grid;
+    grid-template-columns: repeat(4, 33px);
+    gap: 0;
+}
+
+/* The client's tab stones, side by side as its side panel has them: the stone's own picture at
+   its own size, the grey cut from the row (sprites.ts), the red the open tab's. Before they're
+   drawn, a stone of the same shape in CSS */
+.hud-tab {
+    position: relative;
+    width: 33px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #3e3529;
+    background-image: linear-gradient(#584c3c, #3c3328);
+    border: 1px solid #0f0c08;
+    border-radius: 4px;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.hud-tab.stoned {
+    background-color: transparent;
+    background-repeat: no-repeat;
+    /* Crisp where the bar's centred on half a pixel, as its icons are */
+    image-rendering: pixelated;
+    background-position: -40px 0;
+    border: none;
+    border-radius: 0;
+}
+
+.hud-tab.active {
+    background-color: #6a2618;
+    background-image: linear-gradient(#7e2e1d, #5c1e12);
+}
+
+.hud-tab.active.stoned {
+    background-color: transparent;
+    background-position: 0 0;
+}
+
+.hud-tab:hover:not(:disabled),
+.hud-tab:focus-visible {
+    outline: none;
+    filter: brightness(1.25);
+}
+
+.hud-tab:disabled {
+    cursor: default;
+}
+
+.hud-tab:disabled img {
+    filter: grayscale(1) brightness(0.55);
+}
+
+.hud-tab.glow {
+    animation: glow 1.4s ease-in-out infinite;
+}
+
+.hud-tab-label {
+    color: #ff981f;
+}
+
+.hud-tab-badge {
+    position: absolute;
+    right: 1px;
+    top: 0;
+    font-family: "OSRS Bold", sans-serif;
+    color: #ffff00;
+}
+
+/* Buffs, over the bar */
+.buffs {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    pointer-events: none;
+}
+
+.buff {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    color: #ff8060;
+    background: rgba(70, 61, 50, 0.8);
+    border: 1px solid #000;
+}
+
+.buff-time {
+    color: #ffffff;
+}
+
+/* A button's choice of skill, over the bar */
+.skill-picker {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 340px;
+    padding: 6px 8px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 2;
+}
+
+.picker-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.picker-choice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 8px 3px 4px;
+}
+
+.picker-choice.unusable {
+    opacity: 0.65;
+}
+
+.picker-icon {
+    width: 36px;
+    height: 32px;
+    flex: none;
+}
+
+.picker-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.picker-name {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ff981f;
+}
+
+.picker-level,
+.picker-on {
+    font-family: "OSRS Small", sans-serif;
+    color: #c7b48e;
+}
+
+.picker-sub {
+    color: #a0e0a0;
+}
+
+.picker-sub.bad {
+    color: #ff4a3a;
+}
+
+/* ---- The pack ---- */
+
+.inventory {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    width: 350px;
+    max-height: calc(100vh / var(--ui-scale) - 132px);
+    overflow-y: auto;
+    padding: 6px 10px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tabs {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+}
+
+.gold {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-family: "OSRS Bold", sans-serif;
+    white-space: nowrap;
+}
+
+/* The page under the tabs: the same height whichever's showing, so the pack doesn't jump. In a
+   short window it's what gives way, scrolling, so the pack's slots below stay whole */
+.inventory > .pack-page {
+    /* The paper doll and the belt under it */
+    flex: 0 1 252px;
+    min-height: 84px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.12);
+    border: 1px solid #231d16;
+    box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.paper-doll {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+}
+
+.doll-row {
+    display: flex;
+    gap: 10px;
+}
+
+.doll-gap {
+    width: 36px;
+    height: 36px;
+}
+
+.slot {
+    position: relative;
+    width: 38px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.18);
+    box-shadow:
+        inset 1px 1px 0 rgba(0, 0, 0, 0.4),
+        inset -1px -1px 0 rgba(255, 235, 200, 0.07);
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.slot.empty {
+    cursor: default;
+}
+
+.slot:hover:not(.empty) {
+    background-color: rgba(255, 220, 140, 0.14);
+}
+
+.slot.magic {
+    background-color: rgba(60, 60, 170, 0.38);
+    box-shadow: inset 0 0 0 1px #6a6aff;
+}
+
+.slot.rare {
+    background-color: rgba(120, 120, 30, 0.38);
+    box-shadow: inset 0 0 0 1px #c8c850;
+}
+
+.slot.unique {
+    background-color: rgba(140, 70, 10, 0.42);
+    box-shadow: inset 0 0 0 1px #d08030;
+}
+
+/* A set piece's green, and a runeword's gold (items.ts SET_COLOR, RUNEWORD_COLOR) */
+.slot.set {
+    background-color: rgba(20, 110, 30, 0.42);
+    box-shadow: inset 0 0 0 1px #30d050;
+}
+
+.slot.runeword {
+    background-color: rgba(110, 90, 40, 0.42);
+    box-shadow: inset 0 0 0 1px #c8b07a;
+}
+
+.slot.unusable::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(200, 20, 20, 0.28);
+    pointer-events: none;
+}
+
+/* What's worn: the worn equipment tab's stone squares, with a slot's shape while it's empty */
+.slot.doll {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #6a675e, #46443e);
+    box-shadow:
+        inset 0 0 0 1px #1c1b18,
+        inset 2px 2px 0 rgba(255, 255, 255, 0.1),
+        inset -2px -2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.slot.doll.tiled {
+    background: none;
+    box-shadow: none;
+}
+
+.slot.doll.magic {
+    box-shadow: inset 0 0 6px 1px rgba(110, 110, 255, 0.9);
+}
+
+.slot.doll.rare {
+    box-shadow: inset 0 0 6px 1px rgba(230, 230, 80, 0.9);
+}
+
+.slot.doll.unique {
+    box-shadow: inset 0 0 6px 1px rgba(230, 140, 50, 0.95);
+}
+
+.slot.doll.set {
+    box-shadow: inset 0 0 6px 1px rgba(60, 220, 90, 0.95);
+}
+
+.slot.doll.runeword {
+    box-shadow: inset 0 0 6px 1px rgba(210, 185, 125, 0.95);
+}
+
+.slot.doll:hover:not(.empty) {
+    filter: brightness(1.15);
+}
+
+.slot-shape {
+    opacity: 0.9;
+}
+
+/* Gear being dragged: the slot it came from dimmed, the one it goes in lit, and it under the pointer */
+.slot.lifted > * {
+    opacity: 0.3;
+}
+
+.slot.doll.drop-ok {
+    filter: brightness(1.3);
+    box-shadow: inset 0 0 8px 2px rgba(255, 220, 90, 0.95);
+}
+
+.slot.doll.drop-no {
+    filter: brightness(0.7);
+}
+
+.drag-ghost {
+    position: fixed;
+    z-index: 20;
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+.inventory .slot:not(.empty) {
+    touch-action: none;
+}
+
+.slot-name {
+    color: #c7b48e;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(8, 38px);
+    gap: 2px;
+    justify-content: center;
+}
+
+.pack-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 8px;
+    color: #c7b48e;
+}
+
+.rune-help {
+    flex: 1;
+}
+
+.stats {
+    display: flex;
+    flex-direction: column;
+    padding: 2px 0;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 1px 8px 2px;
+    color: #ff981f;
+}
+
+.stat-row:nth-child(even) {
+    background: rgba(0, 0, 0, 0.14);
+}
+
+.stat-value {
+    color: #ffff00;
+    text-align: right;
+}
+
+/* ---- Runes: the pouch, and a rune in hand ---- */
+
+/* The pack's Pouch: the runes, the herbs and the spoils, each under its name, eight to a row as
+   the pack's own slots are (seven when the page has to scroll) */
+.pouch {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 6px 6px;
+}
+
+.pouch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 36px);
+    gap: 2px;
+    justify-content: center;
+}
+
+.pouch-grid .slot {
+    width: 36px;
+    height: 32px;
+}
+
+.slot.rune.none {
+    opacity: 0.4;
+}
+
+.slot.rune.held {
+    box-shadow:
+        0 0 0 2px #ffff00,
+        0 0 8px rgba(255, 255, 0, 0.6);
+}
+
+/* A stack's number, top left, as the client draws it */
+.stack-count {
+    position: absolute;
+    left: 1px;
+    top: -1px;
+    color: #ffff00;
+}
+
+.holding-rune .slot:not(.empty):not(.rune) {
+    cursor: crosshair;
+}
+
+.slot.rune-fits {
+    box-shadow:
+        inset 0 0 0 1px #ffe080,
+        0 0 6px rgba(255, 224, 128, 0.6);
+}
+
+.slot.rune-no {
+    opacity: 0.45;
+}
+
+/* ---- Gems and sockets ---- */
+
+.gem-page {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 6px 8px;
+}
+
+.socket-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.slot.small {
+    width: 32px;
+    height: 32px;
+    flex: none;
+}
+
+.slot.chosen-gem {
+    box-shadow:
+        0 0 0 2px #ffff00,
+        0 0 8px rgba(255, 255, 0, 0.6);
+}
+
+.socket-list {
+    display: flex;
+    align-items: center;
+}
+
+.socket {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    box-shadow: 0 0 0 1px #000;
+    cursor: pointer;
+    box-sizing: border-box;
+    pointer-events: auto;
+}
+
+.socket.full {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.socket.fits {
+    box-shadow: 0 0 6px 2px rgba(255, 255, 120, 0.8);
+}
+
+.socket.no {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.socket-link {
+    width: 8px;
+    height: 4px;
+    background: #2a2218;
+}
+
+.socket-link.on {
+    height: 6px;
+    background: linear-gradient(#e8d0a0, #8a6a3a);
+    box-shadow: 0 0 0 1px #000;
+}
+
+.gem-level {
+    position: absolute;
+    right: 1px;
+    bottom: -1px;
+    color: #ffffff;
+}
+
+/* A skill gem's skill, small in its slot's top left, over the gem */
+.gem-skill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    pointer-events: none;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.35) 70%, transparent);
+    filter: drop-shadow(1px 1px 0 #000);
+}
+
+.socket .gem-skill {
+    left: -7px;
+    top: -7px;
+}
+
+/* A spell's or prayer's sprite in an item icon's box (SkillPic) */
+.skill-pic {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.skill-pic img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* Smoothed when it's made smaller, like an item icon */
+.skill-pic.small img {
+    image-rendering: auto;
+}
+
+.gem-warn {
+    position: absolute;
+    left: 2px;
+    top: -1px;
+    font-family: "OSRS Bold", sans-serif;
+    color: #ff4a3a;
+}
+
+.gem-help {
+    margin-top: auto;
+    padding-top: 4px;
+    color: #c7b48e;
+}
+
+/* A gem's colour in its card */
+.gem-colour {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px #000;
+    vertical-align: 1px;
+}
+
+/* An item's sockets small, along its slot's foot */
+.socket-dots {
+    position: absolute;
+    bottom: 1px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.card-sockets .socket-dots,
+.bench-sockets .socket-dots {
+    position: static;
+    display: inline-flex;
+}
+
+.dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px #000;
+    opacity: 0.55;
+}
+
+.dot.full {
+    opacity: 1;
+    box-shadow:
+        0 0 0 1px #000,
+        0 0 3px #fff;
+}
+
+.dot-link {
+    width: 3px;
+    height: 2px;
+    background: #d8c090;
+}
+
+.dot + .dot {
+    margin-left: 2px;
+}
+
+.card-sockets .dot,
+.bench-sockets .dot {
+    width: 8px;
+    height: 8px;
+}
+
+.card-sockets {
+    margin: 2px 0;
+}
+
+/* ---- Tooltips: an item's card, with what's worn beside it ---- */
+
+.tooltip {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* The game's own hover tip (HoverTip), dressed as the client's: a dark box, a thin black edge,
+   a gold heading, cream lines */
+.hover-tip {
+    z-index: 40;
+}
+
+.hover-tip-box {
+    background: rgba(12, 10, 6, 0.95);
+    border: 1px solid #000;
+    box-shadow: inset 0 0 0 1px #5a4a32;
+    padding: 4px 7px;
+    max-width: 280px;
+    font-size: 15px;
+    line-height: 1.25;
+    color: #e8dcb8;
+    white-space: normal;
+}
+
+.hover-tip-head {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ff981f;
+    margin-bottom: 2px;
+}
+
+.hover-tip-line {
+    color: #e8dcb8;
+}
+
+.tooltip.leftward {
+    flex-direction: row-reverse;
+}
+
+.tooltip-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.item-card {
+    background: rgba(12, 10, 6, 0.95);
+    border: 1px solid #000;
+    box-shadow:
+        inset 0 0 0 1px #5a4a33,
+        0 4px 12px rgba(0, 0, 0, 0.6);
+    padding: 7px 12px 8px;
+    min-width: 220px;
+    max-width: 300px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.item-card.magic {
+    box-shadow:
+        inset 0 0 0 1px #6a6aff,
+        0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.item-card.rare {
+    box-shadow:
+        inset 0 0 0 1px #c8c850,
+        0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.item-card.unique {
+    box-shadow:
+        inset 0 0 0 1px #d08030,
+        0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.item-card.set {
+    box-shadow:
+        inset 0 0 0 1px #30d050,
+        0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.item-card.runeword {
+    box-shadow:
+        inset 0 0 0 1px #c8b07a,
+        0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.item-card.gem {
+    box-shadow:
+        inset 0 0 0 1px #1ba29b,
+        0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.card-label {
+    color: #c7b48e;
+    margin-bottom: 2px;
+}
+
+.card-name,
+.card-base {
+    font-family: "OSRS Bold", sans-serif;
+}
+
+.card-line {
+    color: #e8e8e8;
+}
+
+.card-line.dim {
+    color: #b8a888;
+}
+
+.card-line.mod {
+    color: #8ab0ff;
+}
+
+.card-line.implicit {
+    color: #d8d8d8;
+}
+
+.card-line.bad {
+    color: #ff4a3a;
+}
+
+.card-line.good {
+    color: #60e060;
+}
+
+.card-line.tags {
+    color: #a8c8c0;
+}
+
+.card-sep {
+    height: 1px;
+    margin: 4px 8px;
+    background: linear-gradient(90deg, transparent, #7a6a4a 20%, #7a6a4a 80%, transparent);
+}
+
+.card-lore {
+    color: #c08040;
+    margin-top: 4px;
+}
+
+.card-hint {
+    color: #ffff00;
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid #3a3024;
+    padding: 3px 8px 4px;
+    text-align: center;
+    max-width: 300px;
+}
+
+/* ---- Shops, the banker and the gem trader ---- */
+
+.trader {
+    position: absolute;
+    right: 366px;
+    top: 8px;
+    width: 340px;
+    max-height: calc(100vh / var(--ui-scale) - 132px);
+    overflow-y: auto;
+    padding: 6px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.trader.stash {
+    width: 350px;
+}
+
+.trader.gem-trader {
+    width: 380px;
+}
+
+/* Someone speaking, as the client's chatbox has it: their name in dark red over black words, on
+   parchment */
+.dialogue {
+    flex: none;
+    padding: 5px 10px 8px;
+    text-align: center;
+    text-shadow: none;
+    background: linear-gradient(#d5c6a0, #c2b18a);
+    border: 1px solid #000;
+    box-shadow:
+        inset 0 0 0 1px #8f7d57,
+        inset 0 0 14px rgba(90, 64, 20, 0.3);
+}
+
+.dialogue-name {
+    font-family: "OSRS Bold", sans-serif;
+    color: #800000;
+    margin-bottom: 3px;
+}
+
+.dialogue-text {
+    color: #000000;
+}
+
+.gamble-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+}
+
+.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 40px);
+    gap: 3px;
+    justify-content: center;
+}
+
+.shop-item.slot {
+    width: 40px;
+    height: 48px;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 1px;
+}
+
+.price {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #ffff00;
+}
+
+.price.dear {
+    color: #ff4a3a;
+}
+
+.foot-note {
+    color: #c7b48e;
+}
+
+.bench {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.bench-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bench-sockets {
+    width: 60px;
+    flex: none;
+}
+
+.bench-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+
+.bench-cost {
+    color: #ffff00;
+}
+
+/* Aubury's enchanting: the rings and amulets to choose from, and the notables */
+.enchant-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.enchant-items .slot {
+    cursor: pointer;
+}
+
+.enchant-search {
+    width: auto;
+    flex: none;
+}
+
+.enchant-list {
+    max-height: 260px;
+}
+
+.card-line.enchant {
+    color: #c8a0ff;
+}
+
+/* ---- The Archmage's rifts ---- */
+
+.archmage {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    width: 660px;
+    max-height: calc(100vh / var(--ui-scale) - 132px);
+    padding: 6px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.archmage-open {
+    color: #d0a0ff;
+    text-align: center;
+}
+
+.archmage-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    min-height: 0;
+}
+
+.archmage-column {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.tiers {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.list-button.tier {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 8px;
+}
+
+.tier-depth {
+    flex: none;
+    width: 30px;
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 32px;
+    line-height: 32px;
+    text-align: center;
+    color: #ff981f;
+    text-shadow: 2px 2px 0 #000;
+}
+
+.tier-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tier-zone {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ffff00;
+}
+
+.tier-level {
+    color: #e0d0b0;
+}
+
+.list-button.rift-offer {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.offer-name {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ff8a60;
+}
+
+.rift-offer.plain .offer-name {
+    color: #ffffff;
+}
+
+.offer-mod {
+    color: #e0d0b0;
+}
+
+.offer-reward {
+    color: #a0e070;
+}
+
+/* The Tombs' invocations: two to a row, lit when chosen */
+.invocations {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    margin: 2px 0 4px;
+}
+
+.list-button.invocation {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 4px 6px;
+    text-align: left;
+}
+
+.list-button.invocation.on {
+    background: linear-gradient(rgba(110, 86, 30, 0.7), rgba(80, 60, 20, 0.7));
+    border-color: #e0c070;
+}
+
+.invocation-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.invocation-name {
+    font-family: "OSRS Bold", sans-serif;
+    color: #c8a060;
+}
+
+.list-button.invocation.on .invocation-name {
+    color: #ffe080;
+}
+
+.invocation-level {
+    color: #ffffff;
+}
+
+.invocation-text {
+    color: #b0a080;
+}
+
+.list-button.invocation.on .invocation-text {
+    color: #e0d0b0;
+}
+
+.invocation-pay {
+    margin-bottom: 6px;
+}
+
+/* With riftstones or the Heart's shards, a third column for them */
+.archmage.with-keys {
+    width: 940px;
+}
+
+.archmage.with-keys .archmage-columns {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.offer-why {
+    color: #ff6050;
+}
+
+.heart-shards {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.heart-shard.lack {
+    opacity: 0.3;
+    filter: grayscale(1);
+}
+
+.rift-offer.heart .offer-name {
+    color: #ff981f;
+    text-align: center;
+}
+
+/* ---- The record: the collection log and the combat achievements (sim/log.ts) ---- */
+
+/* A panel moved by its title (Ui.tsx useMovable): over the rest of the interface, placed by
+   its left and top */
+.movable {
+    position: absolute;
+    z-index: 5;
+}
+
+.panel-head.grab {
+    cursor: move;
+    touch-action: none;
+}
+
+/* The size of the client's own collection log, and the same whichever page is open */
+.log-panel {
+    width: 540px;
+    max-width: calc(100vw / var(--ui-scale) - 16px);
+    height: min(420px, calc(100vh / var(--ui-scale) - 16px));
+    padding: 4px 8px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.log-tiers {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+}
+
+.log-body {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+    min-height: 0;
+}
+
+.log-pages {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 196px;
+    flex-shrink: 0;
+    overflow-y: auto;
+}
+
+.log-page {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 1px 5px 2px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid #3c3328;
+    color: #ff981f;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.log-page.chosen {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.log-page.complete span:first-child {
+    color: #0dc10d;
+}
+
+.log-entries {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+}
+
+.log-grid,
+.log-hilts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.log-slot.lack {
+    opacity: 0.3;
+    filter: grayscale(1);
+}
+
+.log-slot.have {
+    cursor: pointer;
+}
+
+.log-tasks {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+}
+
+.log-task-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.log-task {
+    display: grid;
+    grid-template-columns: 24px 150px 1fr;
+    gap: 6px;
+    align-items: center;
+    padding: 2px 4px;
+    background: rgba(0, 0, 0, 0.2);
+    color: #ff981f;
+}
+
+.log-task.done {
+    color: #0dc10d;
+}
+
+.log-tier {
+    text-align: center;
+    font-weight: bold;
+    border-radius: 3px;
+    color: #000000;
+    background: #c8a868;
+}
+
+.log-tier.medium {
+    background: #a8a8a8;
+}
+
+.log-tier.hard {
+    background: #6a8ad0;
+}
+
+.log-tier.elite {
+    background: #9a6ad0;
+}
+
+.log-tier.master {
+    background: #d06a6a;
+}
+
+.log-tier.grandmaster {
+    background: #ffd040;
+}
+
+/* The orrery (sim/orrery.ts) */
+.orrery-panel {
+    width: min(980px, 96vw);
+    max-height: 86vh;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.orrery-arms {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.orrery-arm {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.orrery-node {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 3px 5px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid #3c3328;
+    color: #ff981f;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.orrery-node.notable {
+    border-color: #8a6a28;
+}
+
+.orrery-node.notable .orrery-name {
+    color: #ffd060;
+}
+
+.orrery-node.shut {
+    opacity: 0.45;
+}
+
+.orrery-node.open {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.orrery-node.taken {
+    background: rgba(13, 193, 13, 0.12);
+    border-color: #2a6a2a;
+}
+
+.orrery-node.taken .orrery-name {
+    color: #0dc10d;
+}
+
+.orrery-text {
+    font-size: 0.85em;
+    color: #c8b898;
+}
+
+.orrery-favour {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.orrery-favour-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.orrery-spheres {
+    cursor: default;
+}
+
+/* An awakened pinnacle (content/pinnacles.ts AWAKENED) */
+.rift-offer.awakened .awakened-name {
+    color: #b080ff;
+}
+
+/* ---- Dying, help and the menu ---- */
+
+.death {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    text-align: center;
+    background: radial-gradient(rgba(60, 0, 0, 0.35), rgba(20, 0, 0, 0.8));
+    z-index: 5;
+    pointer-events: auto;
+}
+
+.death-title {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 48px;
+    line-height: 48px;
+    color: #ff0000;
+    text-shadow: 3px 3px 0 #000;
+}
+
+.death-text {
+    max-width: 460px;
+    color: #ffffff;
+    text-wrap: balance;
+}
+
+.death.hardcore {
+    background: radial-gradient(rgba(30, 30, 30, 0.4), rgba(0, 0, 0, 0.88));
+}
+
+.death.hardcore .death-title {
+    color: #c8c8c8;
+}
+
+/* Over everything, the bar and the chat too: the game waits while it's up */
+.modal-back {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    pointer-events: auto;
+    z-index: 6;
+}
+
+.help {
+    width: 780px;
+    padding: 6px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.help-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    max-height: calc(100vh / var(--ui-scale) - 150px);
+    overflow-y: auto;
+    color: #f0e0c0;
+}
+
+.help-section + .help-section {
+    margin-top: 10px;
+}
+
+.help-section .section-title {
+    margin-bottom: 6px;
+}
+
+.help-section p {
+    margin: 0 0 8px;
+}
+
+.menu {
+    width: 320px;
+    padding: 6px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.menu-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.menu-label {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ff981f;
+}
+
+.ui-button.toggle {
+    min-width: 80px;
+}
+
+.stepper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.stepper-value {
+    min-width: 44px;
+    text-align: center;
+    color: #ffff00;
+}
+
+.ui-button.step {
+    width: 28px;
+    padding: 5px 0;
+    font-family: "OSRS Bold", sans-serif;
+}
+
+.zone-value.zone-time-short {
+    color: #ff3030;
+}
+
+.menu-pair {
+    display: flex;
+    gap: 8px;
+}
+
+.menu-pair > .ui-button {
+    flex: 1;
+}
+
+/* A volume: the client's dark groove, filled orange to the thumb */
+.volume {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.volume input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 130px;
+    height: 8px;
+    border: 1px solid #000;
+    background: linear-gradient(to right, #ff981f 0 var(--fill), #231d16 var(--fill) 100%);
+    box-shadow: 0 1px 0 #6e6250;
+    cursor: pointer;
+}
+
+.volume input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 16px;
+    background: #5a4a32;
+    border: 1px solid #000;
+    box-shadow: inset 0 1px 0 #8a7a5a;
+}
+
+.volume input[type="range"]::-moz-range-thumb {
+    width: 10px;
+    height: 16px;
+    background: #5a4a32;
+    border: 1px solid #000;
+    border-radius: 0;
+}
+
+.volume-value {
+    min-width: 38px;
+    text-align: right;
+    color: #e8dcb8;
+}
+
+.controls-menu {
+    width: 420px;
+}
+
+.controls-list {
+    max-height: min(60vh, 520px);
+    overflow-y: auto;
+    padding-right: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.controls-group {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ff981f;
+    margin-top: 6px;
+}
+
+.controls-row {
+    display: grid;
+    grid-template-columns: 1fr 92px 92px;
+    gap: 6px;
+    align-items: center;
+}
+
+.controls-name {
+    color: #e8dcb8;
+}
+
+.ui-button.key-button {
+    min-width: 0;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.ui-button.key-button.unset {
+    color: #7a6e58;
+}
+
+.ui-button.key-button.waiting {
+    color: #ffff00;
+}
+
+.controls-note {
+    color: #b8a888;
+    font-size: 14px;
+}
+
+.menu-sep {
+    height: 1px;
+    margin: 2px 0;
+    background: #231d16;
+    box-shadow: 0 1px 0 #6e6250;
+}
+
+.ui-icon {
+    image-rendering: pixelated;
+}
+
+.ui-icon-smooth {
+    image-rendering: auto;
+}
+
+/* A panel kept on a short screen scrolls as a whole, rather than squeezing what's in it; only its
+   lists give way */
+.inventory > *,
+.trader > *,
+.archmage > *,
+.hero-list > *,
+.look-panel > *,
+.skill-picker > *,
+.class-panel > *,
+.help > * {
+    flex: none;
+}
+
+.archmage > .archmage-columns,
+.hero-list > .hero-rows,
+.skill-picker > .picker-list {
+    flex: 0 1 auto;
+    min-height: 0;
+}
+
+/* ---- The title: the heroes kept, a class from the line, and how they look (Title.tsx) ---- */
+
+/* The stage shows through: only the panels and buttons take the mouse, so the rest can pick a class
+   in the line or turn the hero */
+.title-screen {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.title-logo {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+.title-logo.small {
+    left: 20px;
+    transform: none;
+}
+
+.title-name {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 48px;
+    line-height: 48px;
+    color: #ff981f;
+    background: linear-gradient(#ffe070 15%, #ff981f 55%, #c84a10);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(3px 3px 0 #000) drop-shadow(0 0 12px rgba(255, 90, 20, 0.45));
+}
+
+.title-logo.small .title-name {
+    font-size: 32px;
+    line-height: 32px;
+    filter: drop-shadow(2px 2px 0 #000);
+}
+
+.title-sub {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ffd27a;
+    margin-top: 4px;
+}
+
+.step-head {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+.step-title {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 32px;
+    line-height: 32px;
+    color: #ff981f;
+    text-shadow: 2px 2px 0 #000;
+    margin-bottom: 4px;
+}
+
+/* Back and on, along the bottom */
+.title-nav {
+    position: absolute;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.drag-hint {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #c7b48e;
+}
+
+.drag-hint.high {
+    top: 72px;
+    bottom: auto;
+}
+
+/* The game's version and what's new, in the corner, out of the way */
+.title-corner {
+    position: absolute;
+    right: 10px;
+    bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+/* What's new: the versions scroll under the head */
+.changelog {
+    width: 560px;
+    max-height: calc(100vh / var(--ui-scale) - 80px);
+    padding: 6px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.changelog-list {
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.changelog-version {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 14px 0 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #231d16;
+    box-shadow: 0 1px 0 #6e6250;
+}
+
+.changelog-list > section:first-child .changelog-version {
+    margin-top: 4px;
+}
+
+.changelog-heading {
+    margin: 8px 0 4px;
+    font-family: "OSRS Bold", sans-serif;
+    color: #ffff00;
+}
+
+.changelog ul {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding-left: 18px;
+}
+
+.changelog li::marker {
+    color: #ff981f;
+}
+
+/* The heroes kept */
+
+.hero-list {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 300px;
+    max-height: calc(100vh / var(--ui-scale) - 140px);
+    padding: 8px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hero-list > .panel-title {
+    text-align: center;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #231d16;
+    box-shadow: 0 1px 0 #6e6250;
+}
+
+.hero-list > .panel-title .dim {
+    font-family: "OSRS Small", sans-serif;
+}
+
+.hero-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.hero-row {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+}
+
+.hero-row.fallen {
+    filter: grayscale(0.8);
+    opacity: 0.75;
+}
+
+.hero-row-name {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ffff00;
+}
+
+.hero-row-sub {
+    color: #e0d0b0;
+}
+
+.hc-badge {
+    color: #ff4a3a;
+    border: 1px solid #a02818;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0 4px 1px;
+    margin-left: 6px;
+}
+
+.hero-row .hc-badge {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    margin: 0;
+}
+
+.hc-badge.fallen {
+    color: #a0a0a0;
+    border-color: #606060;
+}
+
+.hero-list-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hero-plate {
+    position: absolute;
+    left: 50%;
+    bottom: 26px;
+    transform: translateX(-50%);
+    width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    text-align: center;
+}
+
+.hero-plate-name {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 32px;
+    line-height: 32px;
+    color: #ffff00;
+    text-shadow: 2px 2px 0 #000;
+}
+
+.hero-plate-class {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ffffff;
+}
+
+.hero-plate .dim {
+    color: #e0d0b0;
+}
+
+.hero-plate-tally {
+    margin-bottom: 8px;
+}
+
+.confirm {
+    width: 400px;
+    padding: 14px 20px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+}
+
+.confirm .dim {
+    color: #f0e0c0;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+/* A class, from the line */
+
+/* Over Back and Next */
+.class-bar {
+    position: absolute;
+    left: 50%;
+    bottom: 86px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    width: max-content;
+    max-width: calc(100vw / var(--ui-scale) - 48px);
+}
+
+.ui-button.class-pick {
+    padding: 7px 12px;
+    min-width: 112px;
+}
+
+.ui-button.class-pick.hovered {
+    color: #ffffff;
+}
+
+/* Between the step's title and the line of classes: in the middle of that space, or filling it
+   and scrolling in a short window */
+.class-panel {
+    position: absolute;
+    right: 20px;
+    top: 76px;
+    bottom: 128px;
+    height: fit-content;
+    max-height: calc(100% - 204px);
+    margin: auto 0;
+    overflow-y: auto;
+    width: 300px;
+    padding: 10px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.class-name {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 32px;
+    line-height: 32px;
+    text-align: center;
+    text-shadow: 2px 2px 0 #000;
+}
+
+.class-role {
+    color: #ffff00;
+    text-align: center;
+    margin-top: -4px;
+}
+
+.class-blurb {
+    color: #f0e0c0;
+    text-align: center;
+}
+
+.class-stats {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    font-family: "OSRS Bold", sans-serif;
+}
+
+.class-attrs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.class-attr {
+    display: grid;
+    grid-template-columns: 30px 1fr 24px;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    color: #ffff00;
+}
+
+.class-attr .dim {
+    color: #ff981f;
+}
+
+.attr-bar {
+    height: 8px;
+    background: #14100a;
+    border: 1px solid #000;
+}
+
+.attr-bar > div {
+    height: 100%;
+    background: linear-gradient(#ffb040, #b06010);
+}
+
+.class-weapons {
+    text-align: center;
+}
+
+.class-skills {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 6px;
+    border-top: 1px solid #231d16;
+    box-shadow: inset 0 1px 0 #6e6250;
+}
+
+.class-skill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: "OSRS Bold", sans-serif;
+    color: #ff981f;
+}
+
+.class-skill .dim {
+    font-family: "OSRS Small", sans-serif;
+}
+
+.class-note {
+    text-align: center;
+}
+
+/* How they look, and their name */
+
+.look-panel {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 290px;
+    max-height: calc(100vh / var(--ui-scale) - 160px);
+    overflow-y: auto;
+    padding: 8px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.look-panel.left {
+    left: 20px;
+}
+
+.look-panel.right {
+    right: 20px;
+}
+
+.look-panel > .panel-title {
+    text-align: center;
+}
+
+.look-presets {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 3px;
+    margin-bottom: 4px;
+}
+
+.look-row {
+    display: grid;
+    grid-template-columns: 76px 24px 1fr 24px;
+    align-items: center;
+    gap: 6px;
+}
+
+.look-toggle {
+    grid-column: 2 / 5;
+    display: flex;
+    gap: 4px;
+}
+
+.look-toggle .ui-button {
+    flex: 1;
+}
+
+.look-label {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ff981f;
+}
+
+.look-value {
+    text-align: center;
+    color: #ffff00;
+}
+
+.look-buttons {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.look-buttons .ui-button {
+    flex: 1;
+}
+
+.look-colors {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+.swatch {
+    width: 15px;
+    height: 15px;
+    padding: 0;
+    border: 1px solid #000;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.swatch:hover {
+    border-color: #ffffff;
+}
+
+.swatch.chosen {
+    outline: 2px solid #ffff00;
+    outline-offset: 0;
+    z-index: 1;
+}
+
+.swatch.otherworldly {
+    border-style: dashed;
+}
+
+.name-title {
+    margin-top: 6px;
+}
+
+.name-row {
+    display: flex;
+    gap: 6px;
+}
+
+.name-input {
+    flex: 1;
+    min-width: 0;
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 16px;
+    line-height: 16px;
+    color: #ffff00;
+    text-shadow: 1px 1px 0 #000;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #0f0c08;
+    box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.5);
+    padding: 5px 8px;
+    outline: none;
+    pointer-events: auto;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.name-input:focus {
+    border-color: #c8a060;
+}
+
+.name-input::placeholder {
+    color: #8a7a60;
+}
+
+.name-problem {
+    color: #ff4a3a;
+}
+
+.hc-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.hc-toggle.on {
+    border-color: #a02818;
+    background: rgba(80, 10, 0, 0.35);
+}
+
+/* The client's checkbox: a dark square, ticked */
+.hc-box {
+    position: relative;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    border: 1px solid #000;
+    background: #1c160f;
+    box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.6);
+    box-sizing: border-box;
+}
+
+.hc-box.on::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 0;
+    width: 5px;
+    height: 9px;
+    border: solid #ff4a3a;
+    border-width: 0 3px 3px 0;
+    transform: rotate(40deg);
+}
+
+.hc-name {
+    font-family: "OSRS Bold", sans-serif;
+}
+
+.hc-toggle.on .hc-name {
+    color: #ff4a3a;
+}
+
+.hc-text {
+    color: #e0d0b0;
+}
+
+/* ---- The passive tree ---- */
+
+/* Over the whole screen, in the interface's stone frame, as the bank is */
+.tree-screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 5;
+}
+
+/* Along the top: the points to spend, the title, how many are taken and the close button */
+.tree-head {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    min-height: 27px;
+    padding: 1px 34px 4px 8px;
+}
+
+.tree-head > span {
+    white-space: nowrap;
+}
+
+.tree-head .panel-title {
+    text-align: center;
+}
+
+.tree-points {
+    font-family: "OSRS Bold", sans-serif;
+    color: #c7b48e;
+}
+
+.tree-points.has {
+    color: #ffff00;
+}
+
+.tree-taken {
+    justify-self: end;
+    color: #ff981f;
+}
+
+.tree-head .rs-close {
+    position: absolute;
+    right: 2px;
+    top: 0;
+}
+
+/* The tree itself, sunk into the stone: the interface's stone again, in the dark */
+.tree-box {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    margin: 0 2px;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+    background:
+        radial-gradient(ellipse at center, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.82)),
+        url("../../../engine/style/interface-bg.png");
+    border: 1px solid #0f0c08;
+    box-shadow:
+        0 0 0 1px #6e6250,
+        inset 0 0 28px rgba(0, 0, 0, 0.85);
+}
+
+.tree-box.on-node {
+    cursor: pointer;
+}
+
+.tree-canvas {
+    display: block;
+}
+
+/* The names: the client's fonts over the drawing, at their own size */
+.tree-labels {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.tree-label {
+    position: absolute;
+    width: 200px;
+    text-align: center;
+    white-space: nowrap;
+    line-height: 16px;
+}
+
+.tree-label.start {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ffffff;
+}
+
+.tree-label.start.other {
+    color: #8a7a60;
+}
+
+.tree-label.keystone {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ff981f;
+}
+
+.tree-label.mastery {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ffb83f;
+}
+
+.tree-label.notable {
+    color: #ffff00;
+}
+
+/* A node's card: an item's, with the node's picture by its name */
+.tree-tip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    z-index: 3;
+    text-align: left;
+}
+
+.tree-tip.notable {
+    box-shadow:
+        inset 0 0 0 1px #c8a050,
+        0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.tree-tip.keystone {
+    box-shadow:
+        inset 0 0 0 1px #ff981f,
+        0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.tip-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tip-icon {
+    flex: none;
+}
+
+.tip-notable {
+    color: #ffff00;
+}
+
+.tip-keystone {
+    color: #ff981f;
+}
+
+.tip-mastery {
+    color: #ffb83f;
+}
+
+.tip-small,
+.tip-attribute,
+.tip-start {
+    color: #ffffff;
+}
+
+.tree-totals {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    width: 270px;
+    max-height: calc(100% - 44px);
+    overflow-y: auto;
+    padding: 6px 10px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 2;
+    cursor: default;
+}
+
+.tree-totals > * {
+    flex: none;
+}
+
+.tree-totals .panel-title {
+    margin-bottom: 4px;
+}
+
+.tree-total {
+    color: #8ab0ff;
+}
+
+/* Along the tree's foot, on a shadow so the nodes under it don't muddle it */
+.tree-hint {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 8px 5px;
+    text-align: center;
+    color: #c7b48e;
+    background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.7));
+    pointer-events: none;
+}
+
+/* Along the bottom, as the bank's buttons are: the search, the gold, and what can be done */
+.tree-foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 2px 0;
+}
+
+.tree-search {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+    line-height: 16px;
+    flex: 0 1 200px;
+    width: 200px;
+    min-width: 80px;
+    padding: 4px 6px;
+    color: #ffff00;
+    text-shadow: 1px 1px 0 #000;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #0f0c08;
+    box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.5);
+    outline: none;
+}
+
+.tree-search:focus {
+    border-color: #c8a060;
+}
+
+.tree-search::placeholder {
+    color: #8a7a60;
+}
+
+.tree-found {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #ff981f;
+}
+
+.tree-gold {
+    flex: none;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.tree-foot .ui-button {
+    flex: none;
+}
+
+/* A socket's talismans: the one in it, and the pack's, at the tree's right as the totals are at its left */
+.tree-picker {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    width: 330px;
+    max-height: calc(100% - 44px);
+    overflow-y: auto;
+    padding: 6px 8px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 2;
+    cursor: default;
+}
+
+.tree-picker > * {
+    flex: none;
+}
+
+.picker-current {
+    position: static;
+    max-width: none;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.picker-current .ui-button {
+    align-self: flex-end;
+    margin-top: 4px;
+}
+
+.picker-icon img {
+    display: block;
+}
+
+.picker-line {
+    color: #8ab0ff;
+}
+
+/* The tree's grown since the points were spent: starting over's free, once */
+.tree-free-reset {
+    margin: 0 2px 4px;
+    padding: 4px 8px;
+    text-align: center;
+    color: #ffff00;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid #0f0c08;
+    box-shadow: 0 0 0 1px #6e6250;
+}
+
+/* ---- The folk's tasks (sim/tasks.ts): the tracker, and the giver's panel ---- */
+
+.task-tracker {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Its heading: what's tracked and how much is done, and a click folds it away */
+.tracker-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.tracker-count {
+    color: #c7b48e;
+}
+
+.tracker-fold {
+    margin-left: auto;
+    color: #ff981f;
+    font-family: "OSRS Bold", sans-serif;
+}
+
+.tracker-head:hover .tracker-fold,
+.tracker-head:focus-visible .tracker-fold {
+    color: #ffffff;
+}
+
+/* A line each, cut short where it won't fit (the whole of it is its tip), its count kept */
+.task-line {
+    display: flex;
+    gap: 6px;
+    color: #ffffff;
+    pointer-events: auto;
+    cursor: help;
+}
+
+.task-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.task-from {
+    color: #c7b48e;
+}
+
+.task-count {
+    flex: none;
+    color: #ffff00;
+}
+
+.task-line.done .task-text {
+    color: #a0e070;
+}
+
+.task-line.done .task-count {
+    color: #a0e070;
+}
+
+.task-panel {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    width: 380px;
+    max-height: calc(100vh / var(--ui-scale) - 132px);
+    overflow-y: auto;
+    padding: 6px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.task-box {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: center;
+}
+
+.task-objective {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ffff00;
+}
+
+.task-where {
+    color: #e0d0b0;
+}
+
+.task-progress {
+    color: #ff981f;
+}
+
+.task-progress.done {
+    color: #a0e070;
+}
+
+.task-reward {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.task-pay {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.task-gold {
+    color: #ffff00;
+}
+
+.task-xp {
+    color: #a0e070;
+}
+
+.task-why {
+    text-align: center;
+}
+
+.task-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* The rift web on the Archmage's panel: the lane walked gold, the places open lit, the rest dim */
+.rift-web {
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 330px;
+    aspect-ratio: 300 / 108;
+    margin: 2px 0 6px;
+}
+
+.web-line {
+    stroke: rgba(0, 0, 0, 0.45);
+    stroke-width: 1;
+}
+
+.web-line.next {
+    stroke: #8a6a2a;
+}
+
+.web-line.lit {
+    stroke: #ffb83f;
+    stroke-width: 1.5;
+}
+
+.web-node {
+    stroke: #000;
+    stroke-width: 1;
+}
+
+.web-node.done {
+    fill: #ffb83f;
+}
+
+.web-node.open {
+    fill: #ff981f;
+}
+
+.web-node.ahead {
+    fill: #9a7a3a;
+}
+
+.web-node.shut {
+    fill: #3a3228;
+}
+
+.web-text {
+    font-size: 11px;
+    fill: #ff981f;
+    /* A halo of the panel's own colour, so a name reads over the lines it sits on */
+    paint-order: stroke;
+    stroke: #3e3529;
+    stroke-width: 3px;
+    stroke-linejoin: round;
+}
+
+.web-text.ahead {
+    fill: #c8aa6e;
+}
+
+.web-text.shut {
+    fill: #6b5f4a;
+}
+
+.offer-bounty {
+    color: #00ff00;
+}
+
+/* Reldo's quest log: a row a quest, a done one lit, a finished one dimmed */
+.quest-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 52vh;
+    overflow-y: auto;
+}
+
+.quest-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 6px;
+    border: 1px solid rgba(0, 0, 0, 0.35);
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.quest-row.unseen,
+.quest-row.claimed {
+    opacity: 0.6;
+}
+
+.quest-row.ready {
+    border-color: #ffb83f;
+}
+
+.quest-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.quest-name {
+    color: #ff981f;
+}
+
+.quest-row.ready .quest-state {
+    color: #00ff00;
+}
+
+.quest-gives {
+    color: #ffff00;
+}
+
+.quest-favour {
+    color: #00ff00;
+}
+
+/* The hireling's portrait under the rift's box, and its panel beside the pack */
+.hire-portrait {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 150px;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.hire-bar {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 7px;
+    background: #8a0000;
+    border: 1px solid #000;
+}
+
+.hire-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: #00a000;
+}
+
+.hire-dead {
+    position: absolute;
+    inset: -4px 0 0;
+    color: #ff4040;
+    font-size: 11px;
+    line-height: 1;
+    text-align: center;
+}
+
+.hire-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.hire-gear {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+}
+
+.hire-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.hire-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.hire-offer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+.hire-offer-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+/* The prayer book: the client's prayer tab, five across, a prayer on lit as the client's is */
+.prayer-panel {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    width: 236px;
+    padding: 6px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.prayer-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 40px);
+    gap: 2px;
+    justify-content: center;
+}
+
+.prayer {
+    width: 40px;
+    height: 38px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.prayer:hover:not(.locked),
+.prayer:focus-visible {
+    outline: none;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.prayer.on {
+    background: radial-gradient(circle, rgba(255, 226, 140, 0.55) 0%, rgba(214, 160, 60, 0.35) 55%, rgba(120, 90, 40, 0.15) 75%);
+    box-shadow: inset 0 0 0 1px rgba(255, 220, 140, 0.45);
+}
+
+.prayer.locked {
+    cursor: default;
+}
+
+/* Minimus's three glories, side by side */
+.glory-offers {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.glory-offer {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    min-height: 96px;
+    white-space: normal;
+    text-align: left;
+}
+
+.glory-name {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ff981f;
+}
+
+.glory-text {
+    font-family: "OSRS Small", sans-serif;
+    line-height: 14px;
+    color: #ffffff;
+}
+
+.glory-worth {
+    font-family: "OSRS Small", sans-serif;
+    color: #e0a040;
+    margin-top: auto;
+}
+
+/* The belt's places under the paper doll, and an empty one's vial, dim */
+.belt-row {
+    margin-top: 6px;
+}
+
+.belt-vial {
+    opacity: 0.3;
+}
+
+/* A place not open yet: the stone sunk dark, its number dim */
+.slot.doll.belt-place.shut {
+    background: linear-gradient(135deg, #2a2924, #1a1916);
+    box-shadow:
+        inset 0 0 0 1px #0c0b0a,
+        inset 2px 2px 3px rgba(0, 0, 0, 0.6);
+}
+
+.belt-place.shut .belt-number {
+    color: #5a5040;
+}
+
+/* The Apothecary's errand for the belt's next place: what's still wanted, dim */
+.belt-errand .slot.missing > img,
+.belt-errand .slot.missing > canvas {
+    opacity: 0.35;
+}
+
+.belt-number {
+    position: absolute;
+    left: 2px;
+    top: 0;
+    color: #c8b898;
+    font-size: 16px;
+    pointer-events: none;
+}
+
+/* Herbs, under the runes (content/goods.ts) */
+.herb-pouch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    justify-content: center;
+    margin-top: 2px;
+}
+
+.slot.herb {
+    width: 32px;
+    height: 30px;
+}
+
+/* A ward over life: a pale veil from the orb's foot */
+.rs-orb-ward {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(rgba(255, 250, 220, 0.25), rgba(255, 240, 180, 0.45));
+    pointer-events: none;
+}
+
+/* The Apothecary's bench: a potion's name beside its buttons */
+.bench-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bench-herbs {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+/* A ladder rift's parts on the Archmage's offer: its name and host, its land and guardian */
+.offer-land {
+    display: block;
+    color: #ffb83f;
+}
+
+.offer-land-name {
+    color: #ffff00;
+}
+
+.offer-land-more {
+    display: block;
+    color: #c8b89a;
+    font-size: 0.92em;
+}
+
+/* An ailment on the hero (a ladder monster's mod), on red among the buffs */
+.buff-ailment {
+    color: #ffe0d0;
+    background: rgba(120, 22, 10, 0.85);
+}
+
+/* Aubury's bench: its tabs, a runeword's runes, and the circle's recipes */
+.bench-tabs {
+    display: flex;
+    gap: 4px;
+    margin: 8px 0 4px;
+}
+
+.bench-tabs .ui-button.chosen {
+    filter: brightness(1.3);
+    box-shadow: inset 0 0 0 1px #ffb83f;
+}
+
+.runeword-runes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 2px 0;
+}
+
+.runeword-rune {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.circle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin: 4px 0;
+}
+
+.circle-choice {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.card-line.set-name {
+    font-weight: bold;
+}

@@ -1,0 +1,14 @@
+# dependencies
+/node_modules
+
+# builds (a build carries a slim copy of the cache: Jagex's, like the cache)
+/dist
+/riftscaper/dist
+
+# The OSRS cache is Jagex's: it stays out of the repository (a link to one, or a copy)
+/caches
+caches/
+
+# misc
+.DS_Store
+*.log

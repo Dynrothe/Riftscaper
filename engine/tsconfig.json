@@ -1,0 +1,5 @@
+{
+    // The engine on its own, with nothing of the game's: bun run tsc --noEmit -p engine
+    "extends": "../tsconfig.json",
+    "include": ["."]
+}

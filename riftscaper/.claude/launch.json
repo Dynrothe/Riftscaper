@@ -1,0 +1,23 @@
+{
+    "version": "0.0.1",
+    "configurations": [
+        {
+            "name": "riftscaper",
+            "runtimeExecutable": "bun",
+            "runtimeArgs": ["run", "start"],
+            "port": 5188
+        },
+        {
+            "name": "riftscaper-alt",
+            "runtimeExecutable": "bun",
+            "runtimeArgs": ["run", "start", "--port", "5198", "--strictPort"],
+            "port": 5198
+        },
+        {
+            "name": "riftscaper-alt2",
+            "runtimeExecutable": "bun",
+            "runtimeArgs": ["run", "start", "--port", "5208", "--strictPort"],
+            "port": 5208
+        }
+    ]
+}
