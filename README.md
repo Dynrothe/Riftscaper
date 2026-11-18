@@ -1,5 +1,7 @@
 # Riftscaper
 
+# NOTE: THIS REPO IS NOT ACCEPTING PULL REQUESTS, IF YOU MAKE PULL REQUESTS, THEY'RE MOST LIKELY GOING TO BE IGNORED!
+
 A Diablo / Path of Exile clone in Old School RuneScape: an action RPG through randomly generated
 rifts of Gielinor, drawn with the real models, animations and sounds from the OSRS cache.
 
