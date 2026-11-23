@@ -360,8 +360,74 @@ export function deleteHero(slot: string): void {
 
 export function loadHero(slot = SAVE_KEY): Hero | undefined {
     try {
-        const raw = JSON.parse(localStorage.getItem(slot) ?? "null");
-        if (!raw || !CLASS_IDS.includes(raw.cls)) {
+        return readHero(localStorage.getItem(slot) ?? "null");
+    } catch {
+        return undefined;
+    }
+}
+
+// ---- A hero to a file and back: to keep them safe, or take them to another browser ----
+
+// A hero's file is their save as it's kept, marked as this game's, so it's mended as it's read in
+// as any old save is; a bare save, as copied out of the browser's storage, is read too
+const FILE_MARK = "riftscaper";
+const FILE_FORMAT = 1;
+
+// The hero kept under this key as a file: its name, and its text
+export function exportHero(slot: string): { name: string; text: string } | undefined {
+    try {
+        const save = localStorage.getItem(slot);
+        const hero = save === null ? undefined : readHero(save);
+        if (!save || !hero) {
+            return undefined;
+        }
+        const name = hero.name.replace(/[^\p{L}\p{N}' -]/gu, "").trim() || "Hero";
+        return { name: `Riftscaper - ${name}.json`, text: `{"${FILE_MARK}":${FILE_FORMAT},"hero":${save}}` };
+    } catch {
+        return undefined;
+    }
+}
+
+// A hero from a file's text, kept under a key of their own; or why not
+export type Imported = { slot: string; hero: Hero } | { why: "full" | "unreadable" | "unkept" };
+
+export function importHero(text: string): Imported {
+    if (heroCount() >= MAX_HEROES) {
+        return { why: "full" };
+    }
+    let hero: Hero | undefined;
+    try {
+        const raw = JSON.parse(text);
+        hero = readHero(raw && typeof raw === "object" && FILE_MARK in raw ? JSON.stringify(raw.hero ?? null) : text);
+    } catch {
+        hero = undefined;
+    }
+    if (!hero) {
+        return { why: "unreadable" };
+    }
+    // On the end of the list, and not the one last played
+    const slot = freeSlot();
+    const roster = readRoster();
+    try {
+        localStorage.setItem(slot, JSON.stringify(hero));
+    } catch {
+        // Storage full, or a private window that keeps nothing
+        return { why: "unkept" };
+    }
+    writeRoster({ slots: [...roster.slots, slot], last: roster.last });
+    if (!readRoster().slots.includes(slot)) {
+        deleteHero(slot);
+        return { why: "unkept" };
+    }
+    return { slot, hero };
+}
+
+// A hero from their save's text: what the game no longer has is left out, and what's from before
+// is mended
+function readHero(save: string): Hero | undefined {
+    try {
+        const raw = JSON.parse(save);
+        if (!raw || typeof raw !== "object" || !CLASS_IDS.includes(raw.cls)) {
             return undefined;
         }
         const inventory: (Item | null)[] = new Array(HERO.inventorySize).fill(null);

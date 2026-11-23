@@ -1,9 +1,9 @@
 // The title, as the genre has it, over the stage before the Archmage's portal (TitleStage.ts):
-// the heroes kept, one chosen to play, made anew or deleted; for a new hero, a class from the line,
-// then how they look (their body, face and colours, from OSRS's own character creation), their
-// name, and whether they've one life only. In the corner, the game's version and what's new.
-// Everything it does goes through the Client.
-import { Fragment, KeyboardEvent as ReactKeyboardEvent } from "react";
+// the heroes kept, one chosen to play, made anew, deleted, or saved to a file and brought in from
+// one; for a new hero, a class from the line, then how they look (their body, face and colours,
+// from OSRS's own character creation), their name, and whether they've one life only. In the
+// corner, the game's version and what's new. Everything it does goes through the Client.
+import { Fragment, KeyboardEvent as ReactKeyboardEvent, useRef } from "react";
 
 import { HSL_RGB_MAP } from "../../../engine/rs/util/ColorUtil";
 import type { Client } from "../client/Client";
@@ -93,11 +93,41 @@ function HeroSelect({ state, client }: Props): JSX.Element {
                         Delete
                     </button>
                 </div>
+                <div className="hero-list-buttons">
+                    <ImportButton className="ui-button small" disabled={busy || full} tip={full ? "Delete a hero to bring another in" : "Bring in a hero from a file"} client={client} />
+                    <button className="ui-button small" disabled={busy || !card} data-tip="Save the chosen hero to a file" onClick={() => client.exportHero()}>
+                        Export
+                    </button>
+                </div>
             </div>
             {card && <HeroPlate card={card} busy={busy} client={client} />}
             <div className="drag-hint dim">Drag to turn</div>
             {state.deleting && <ConfirmDelete card={state.heroes.find((h) => h.slot === state.deleting)} client={client} />}
         </div>
+    );
+}
+
+// A hero's file, or several, picked from the computer's own (Export makes them)
+function ImportButton({ className, disabled, tip, client }: { className: string; disabled: boolean; tip: string; client: Client }): JSX.Element {
+    const input = useRef<HTMLInputElement>(null);
+    return (
+        <>
+            <button className={className} disabled={disabled} data-tip={tip} onClick={() => input.current?.click()}>
+                Import
+            </button>
+            <input
+                ref={input}
+                type="file"
+                accept=".json,application/json"
+                multiple
+                hidden
+                onChange={(e) => {
+                    const files = [...(e.target.files ?? [])];
+                    e.target.value = "";
+                    void client.importHeroes(files);
+                }}
+            />
+        </>
     );
 }
 
@@ -214,10 +244,12 @@ function ClassStep({ state, client }: Props): JSX.Element {
                 ))}
             </div>
             <div className="title-nav">
-                {state.heroes.length > 0 && (
+                {state.heroes.length > 0 ? (
                     <button className="ui-button" onClick={() => client.titleBack()}>
                         Back
                     </button>
+                ) : (
+                    <ImportButton className="ui-button" disabled={busy} tip="Bring in a hero saved to a file" client={client} />
                 )}
                 <button className="ui-button big ui-main" disabled={!state.pick || busy} onClick={() => client.toLook()}>
                     Next

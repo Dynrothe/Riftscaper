@@ -162,8 +162,10 @@ import {
     MAX_HEROES,
     Settings,
     deleteHero,
+    exportHero as heroToFile,
     freeSlot,
     heroCount,
+    importHero as heroFromFile,
     listHeroes,
     loadHero,
     loadSettings,
@@ -868,6 +870,47 @@ export class Client implements GameFrameHandler {
             if (name) {
                 this.store.toast(`${name} is gone.`, 2500);
             }
+        }
+    }
+
+    // The chosen hero to a file, to keep them safe or take them to another browser
+    exportHero(): void {
+        const slot = this.store.getSnapshot().selected;
+        const file = slot ? heroToFile(slot) : undefined;
+        if (!file) {
+            this.store.toast("That hero can't be read.", 3000, "warn");
+            return;
+        }
+        const url = URL.createObjectURL(new Blob([file.text], { type: "application/json" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = file.name;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        this.store.toast(`Saved to ${file.name}.`, 3000);
+    }
+
+    // Heroes from files, each kept under a key of their own; the last brought in is chosen
+    async importHeroes(files: File[]): Promise<void> {
+        let last: string | undefined;
+        for (const file of files) {
+            const text = await file.text().catch(() => "");
+            const done = heroFromFile(text);
+            if ("slot" in done) {
+                last = done.slot;
+                this.store.toast(`${done.hero.name} has joined your heroes.`, 3000);
+            } else if (done.why === "full") {
+                this.store.toast(`You can keep ${MAX_HEROES} heroes. Delete one to bring another in.`, 3500, "warn");
+                break;
+            } else if (done.why === "unkept") {
+                this.store.toast("The browser wouldn't keep another hero: its storage may be full.", 4000, "warn");
+                break;
+            } else {
+                this.store.toast(`${file.name} isn't a Riftscaper hero.`, 3500, "warn");
+            }
+        }
+        if (last) {
+            this.refreshHeroes(last);
         }
     }
 

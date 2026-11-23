@@ -78,11 +78,13 @@ Host `dist/` with the headers `Cross-Origin-Opener-Policy: same-origin` and
   own character creation, from the cache's identity kits), with eight looks to start from, the dice,
   and a look with or without their first gear. Then a name (or roll one), and **Hardcore** if you
   want it: one life, and a hardcore hero who dies has fallen, stays on the list as a ghost, and
-  never plays again. Delete asks first. In the game, the menu's **Helm** hides your helm so your
-  face shows, **Screen shake** and **Smooth animation** turn those off (smoothing is off to start
-  with on a phone, as it costs memory), and **Save and change hero** goes back to the list. The
-  title's corner has the game's version, and **What's new** opens what changed in each one
-  (`CHANGELOG.md`).
+  never plays again. Delete asks first. **Export** saves the chosen hero to a file and **Import**
+  brings heroes in from files (on the list, or the class line when there are none yet), to keep
+  them safe or take them to another browser; a hero brought in joins the list as one more. In the
+  game, the menu's **Helm** hides your helm so your face shows, **Screen shake** and **Smooth
+  animation** turn those off (smoothing is off to start with on a phone, as it costs memory), and
+  **Save and change hero** goes back to the list. The title's corner has the game's version, and
+  **What's new** opens what changed in each one (`CHANGELOG.md`).
   **Sound** sets the volume, and the fighting's and the interface's on top of it. **Controls** sets
   two keys for every control: click one and press a key (Backspace clears it, Escape leaves it),
   and a key already on another control moves over. The mouse's buttons and Escape stay as they
@@ -501,7 +503,7 @@ that the same seed and modifiers play out the same, and the rift's time limit; `
 checks the uniques' traits, keystones and powers, riftstones and shards, the second guardians
 and the Heart, and chests, shrines and hoards; `tasks.test.ts` the folk's offers, every giver's
 tasks at every depth, taking them, counting them in a rift and paying for them; `settings.test.ts`
-saves and loads heroes, their looks, tasks, quests, the web and the roster; `controls.test.ts` the key bindings.
+saves and loads heroes, their looks, tasks, quests, the web and the roster, and a hero to a file and back; `controls.test.ts` the key bindings.
 The Diablo expansion has its own: `potions.test.ts`, `ladder.test.ts`, `encounters.test.ts` and
 `encounters2.test.ts`, `diablo.test.ts` (sets, runewords, the circle, elite bases, skill levels and
 chances to cast), `levels.test.ts`, `prayers.test.ts`, `hirelings.test.ts`, `quests.test.ts`,
@@ -513,7 +515,9 @@ before there could be more), each one since under `riftscaper-save-2`, `-3` and 
 of them, with the last played, under `riftscaper-heroes`. Everything saved while the game was
 called Runefall, under the same keys beginning `runefall-`, is moved to these as the game opens
 (`moveOldKeys` in `client/settings.ts`, before anything reads a save). A save from before the list is its first
-hero. The settings are under `riftscaper-settings` and `riftscaper-audio`. A hero saved before looks
+hero. The settings are under `riftscaper-settings` and `riftscaper-audio`. A hero's file (Export) is
+their save as it's kept, under `hero`, marked `"riftscaper": 1`; Import reads it, or a bare save,
+as a save is loaded, mending it, and keeps the hero under the next free key. A hero saved before looks
 is given their class's own (`CLASS_LOOKS`), and a look a body can't have is mended as it's
 loaded. A hero saved before gems is given sockets in what they
 wear, and the gems their level has brought, when it's loaded, one saved before runes an empty

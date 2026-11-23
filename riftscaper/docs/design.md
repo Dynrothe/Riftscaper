@@ -1510,6 +1510,9 @@ seed and compares fingerprints; keep anything that would break that out of `src/
 `riftscaper-settings` and sound under `riftscaper-audio`. Never rename a key players have data under
 without moving it: the keys from when the game was called Runefall (`runefall-save` and the rest)
 are moved by `moveOldKeys` as it opens, before anything reads a save.
+A hero goes to a file and back from the title (`exportHero`, `importHero` in `settings.ts`): the
+file is the save as it's kept, so it's read in through the same mending as a load and the same
+promises hold for it, and a hero brought in is one more on the list, never one replaced.
 Loading mends old saves: a look a body can't have, a hero from before gems (sockets and gems are
 given), before runes (empty pouch and stash), before modifiers (no rift open), before tasks (none
 under way); unknown items are dropped, a task naming a kind, giver, monster or guardian that's gone

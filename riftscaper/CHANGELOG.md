@@ -5,6 +5,12 @@ in its corner). One short bullet a change, under Added, Changed or Fixed.
 
 ## Unreleased
 
+## 0.3.1 - 2026-11-23
+
+### Added
+
+- Export saves the chosen hero to a file, and Import brings heroes in from files, to keep them safe or play them in another browser.
+
 ## 0.3.0 - 2026-11-18
 
 ### Added

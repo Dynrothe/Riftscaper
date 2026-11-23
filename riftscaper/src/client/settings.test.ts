@@ -2,8 +2,8 @@
 // skill bar, the runes and the stash; a hero saved before gems were, given sockets and their level's
 // gems; one saved before runes, given an empty pouch and stash; the open rift's modifiers; and the
 // tasks under way. The roster of heroes: the first hero's own key kept, each after under one of its own, and deleting;
-// what was saved while the game was called Runefall, moved to its own keys;
-// and how each looks, their name and whether they're hardcore.
+// what was saved while the game was called Runefall, moved to its own keys; a hero saved to a file
+// and brought back in; and how each looks, their name and whether they're hardcore.
 import { CLASS_LOOKS, KITS, PRESETS, kitsFor, plainLook, randomLook, readLook, switchBody } from "../content/looks";
 import { Rng } from "../../../engine/core/Rng";
 import { STASH } from "../content/rules";
@@ -12,7 +12,7 @@ import { wornGems } from "../sim/gems";
 import { gainXp, newHero } from "../sim/hero";
 import { allocate } from "../sim/passives";
 import { rollTask, takeTask } from "../sim/tasks";
-import { SAVE_KEY, deleteHero, freeSlot, heroCount, listHeroes, loadHero, loadSettings, moveOldKeys, saveHero, setLastHero } from "./settings";
+import { MAX_HEROES, SAVE_KEY, deleteHero, exportHero, freeSlot, heroCount, importHero, listHeroes, loadHero, loadSettings, moveOldKeys, saveHero, setLastHero } from "./settings";
 
 const store = new Map<string, string>();
 beforeAll(() => {
@@ -304,6 +304,58 @@ describe("the heroes", () => {
         const before = new Map(store);
         moveOldKeys();
         expect(store).toEqual(before);
+    });
+
+    it("saves a hero to a file and brings them back in, under a key of their own and not as the last played", () => {
+        const hero = newHero("mage", 5, { name: "Zara O'Dell" });
+        gainXp(hero, 5000);
+        hero.runes.chaos = 7;
+        hero.stash[3] = { uid: 4321, base: hero.equipment.body!.base, rarity: "normal", level: 5, mods: [] };
+        saveHero(hero, SAVE_KEY);
+        saveHero(newHero("warrior", 1, { name: "Brute" }), freeSlot());
+        setLastHero(SAVE_KEY);
+
+        const file = exportHero(SAVE_KEY)!;
+        expect(file.name).toBe("Riftscaper - Zara O'Dell.json");
+        expect(JSON.parse(file.text)).toEqual({ riftscaper: 1, hero: JSON.parse(store.get(SAVE_KEY)!) });
+
+        const done = importHero(file.text);
+        if (!("slot" in done)) {
+            throw new Error(`not imported: ${done.why}`);
+        }
+        expect(done.slot).not.toBe(SAVE_KEY);
+        const back = loadHero(done.slot)!;
+        expect(back).toEqual(loadHero(SAVE_KEY));
+        expect(back.stash[3]?.uid).toBe(4321);
+        expect(heroCount()).toBe(3);
+        expect(listHeroes().map((h) => h.hero.name)).toEqual(["Zara O'Dell", "Brute", "Zara O'Dell"]);
+        expect(listHeroes()[0].slot).toBe(SAVE_KEY);
+    });
+
+    it("brings in a bare save, mended as it loads, and nothing that isn't a hero", () => {
+        const old = newHero("paladin", 1, { name: "Thane" }) as unknown as Record<string, unknown>;
+        delete old.look;
+        delete old.runes;
+        const done = importHero(JSON.stringify(old));
+        expect("slot" in done && done.hero.name).toBe("Thane");
+        expect("slot" in done && done.hero.look).toEqual(CLASS_LOOKS.paladin);
+        for (const text of ["", "not json", "null", "[]", '{"riftscaper":1}', '{"riftscaper":1,"hero":{"cls":"bard"}}', '{"name":"Nobody"}']) {
+            expect(importHero(text)).toEqual({ why: "unreadable" });
+        }
+        expect(heroCount()).toBe(1);
+        expect(exportHero("riftscaper-save-99")).toBeUndefined();
+    });
+
+    it("brings in no more than the most heroes kept", () => {
+        const file = (() => {
+            saveHero(newHero("ranger", 1, { name: "Fletch" }), freeSlot());
+            return exportHero(SAVE_KEY)!.text;
+        })();
+        while (heroCount() < MAX_HEROES) {
+            expect("slot" in importHero(file)).toBe(true);
+        }
+        expect(importHero(file)).toEqual({ why: "full" });
+        expect(heroCount()).toBe(MAX_HEROES);
     });
 
     it("keeps how a hero looks, their name, and whether they're hardcore and have fallen", () => {
